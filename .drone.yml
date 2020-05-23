@@ -1,0 +1,78 @@
+---
+kind: pipeline
+type: kubernetes
+name: unifi-linux-amd64
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+  - name: publish
+    image: plugins/docker:18
+    settings:
+      auto_tag: true
+      auto_tag_suffix: linux-amd64
+      dockerfile: Dockerfile
+      repo: lehtux/unifi
+      username:
+        from_secret: username
+      password:
+        from_secret: password
+    when:
+      event:
+        - tag
+
+---
+kind: pipeline
+type: kubernetes
+name: unifi-linux-arm64
+
+platform:
+  arch: arm64
+  os: linux
+
+steps:
+  - name: publish
+    image: plugins/docker:18
+    settings:
+      auto_tag: true
+      auto_tag_suffix: linux-arm64
+      dockerfile: Dockerfile
+      repo: lehtux/unifi
+      username:
+        from_secret: username
+      password:
+        from_secret: password
+
+trigger:
+  event:
+    - tag
+
+depends_on:
+  - unifi-linux-amd64
+
+---
+kind: pipeline
+type: kubernetes
+name: manifest
+
+steps:
+  - name: publish
+    image: plugins/manifest:1.2
+    settings:
+      auto_tag: true
+      ignore_missing: true
+      spec: manifest.tmpl
+      username:
+        from_secret: username
+      password:
+        from_secret: password
+
+trigger:
+  event:
+    - tag
+
+depends_on:
+  - unifi-linux-arm64
+  - unifi-linux-amd64
